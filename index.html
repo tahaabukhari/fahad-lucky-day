@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<!-- Dark mode is default --><html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horse Betting Simulator</title>
+    <!-- Load Tailwind CSS --><script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Inter font --><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <!-- NEW: Load Tone.js for sound --><script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+    <style>
+        /* Use Inter as the default font */
+        html, body {
+            height: 100%;
+            overflow: hidden; /* Hide scrollbars */
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Base theme is now dark mode */
+            background-color: #111827; /* gray-900 */
+            color: #f3f4f6; /* gray-100 */
+        }
+        /* Custom styles for the horse */
+        .horse {
+            transition: left 0.1s linear;
+            font-size: 1.5rem; /* Mobile emoji size */
+            line-height: 1;
+            z-index: 20; /* Ensure horse is above finish line */
+        }
+        .horse-name {
+            position: absolute;
+            bottom: -16px; /* Mobile nameplate position */
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.65rem; /* Mobile font size */
+            font-weight: 700; 
+            white-space: nowrap;
+        }
+        .horse-rank {
+            position: absolute;
+            top: -20px; /* Mobile rank position */
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: gold;
+            color: black;
+            font-weight: bold;
+            border-radius: 50%;
+            width: 18px; /* Mobile rank size */
+            height: 18px; /* Mobile rank size */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem; /* Mobile rank font */
+            z-index: 10;
+        }
+        /* Style for 2nd (silver) and 3rd (bronze) place */
+        .horse-rank[data-rank="2"] { background-color: silver; }
+        .horse-rank[data-rank="3"] { background-color: #cd7f32; }
+        
+        /* Responsive adjustments for desktop */
+        @media (min-width: 640px) {
+            .horse {
+                font-size: 1.8rem;
+            }
+            .horse-name {
+                font-size: 0.875rem;
+                bottom: -20px;
+                padding: 3px 8px;
+            }
+            .horse-rank {
+                width: 24px;
+                height: 24px;
+                font-size: 0.9rem;
+                top: -25px;
+            }
+        }
+
+        /* Title Screen Animations */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+        @keyframes pulse-button {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .animate-pulse-button {
+            animation: pulse-button 2s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="p-2 sm:p-4">
+    
+    <!-- Game Container --><div class="w-full max-w-6xl mx-auto h-full flex flex-col">
+
+        <!-- ===== Title Screen ===== --><div id="title-screen" class="relative text-center flex-grow flex flex-col justify-center">
+            
+            <h1 class="text-4xl sm:text-6xl font-black text-white mb-4 animate-float">Fahad's Lucky Day!</h1>
+            <p class="text-lg sm:text-xl text-gray-300 mb-8 whitespace-pre-line">
+A super simple horse betting simulator made with AI(love)!!
+Place Your Bets and WIN BIG!!
+            </p>
+            <button id="play-button" class="bg-gray-200 text-gray-900 hover:bg-gray-300 text-xl py-3 px-8 sm:text-2xl sm:py-4 sm:px-12 rounded-lg shadow-lg transition duration-300 transform hover:scale-105 self-center animate-pulse-button">
+                PLAY
+            </button>
+        </div>
+
+        <!-- ===== Game Screen ===== --><div id="game-screen" class="hidden w-full h-full flex-col">
+            <!-- Header: Balance and Messages --><div class="flex justify-between items-center mb-4 p-4 bg-gray-800 rounded-lg shadow-inner flex-shrink-0">
+                <button id="main-menu-button" class="bg-gray-600 hover:bg-gray-700 text-white text-sm font-bold py-1 px-2 sm:py-2 sm:px-4 rounded-lg shadow-lg transition duration-300">
+                    Main Menu
+                </button>
+                
+                <div id="message-center" class="text-base sm:text-lg font-semibold text-white h-6 text-center flex-grow px-2"></div>
+                <h2 class="text-xl sm:text-3xl font-bold text-white">
+                    <span class="hidden sm:inline">BALANCE: </span>
+                    <span id="balance-display">1000</span>
+                </h2>
+            </div>
+
+            <!-- Racetrack Area (flex-grow to fill space) --><div id="racetrack-area" class="relative bg-green-900 border-8 border-yellow-700 rounded-lg p-4 w-full flex-grow" style="background-color: #386641;">
+                <!-- Finish Line --><div id="finish-line" class="absolute top-0 bottom-0 right-4 w-4 bg-repeat-y z-10" style="background-image: repeating-linear-gradient(135deg, white, white 10px, black 10px, black 20px); border-left: 4px solid #a00;">
+                </div>
+                
+                <!-- Track Container (h-full to fill parent) --><div id="racetrack-container" class="flex flex-col justify-around h-full relative pr-8">
+                    <!-- Tracks will be dynamically generated here --></div>
+            </div>
+
+            <!-- Controls --><div class="flex justify-between items-center mt-6 flex-shrink-0">
+                <button id="bet-button" class="bg-gray-200 text-gray-900 hover:bg-gray-300 text-base py-2 px-4 sm:text-xl sm:py-3 sm:px-8 rounded-lg shadow-lg transition duration-300 transform hover:scale-105">
+                    Place Your Bets!
+                </button>
+                <button id="start-button" class="bg-gray-200 text-gray-900 hover:bg-gray-300 text-base py-2 px-4 sm:text-xl sm:py-3 sm:px-8 rounded-lg shadow-lg transition duration-300 transform hover:scale-105 opacity-50 cursor-not-allowed" disabled>
+                    Start Race!
+                </button>
+            </div>
+        </div>
+
+        <!-- ===== Betting Modal ===== --><div id="betting-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+            <!-- Modal content with reduced padding and max height --><div class="bg-gray-800 p-4 sm:p-6 rounded-lg shadow-2xl w-full max-w-lg text-white flex flex-col" style="max-height: 90vh;">
+                <h2 class="text-2xl sm:text-3xl font-bold mb-4 text-center text-white flex-shrink-0">Place Your Bets</h2>
+                
+                <!-- Scrollable form area --><div id="betting-form" class="space-y-3 mb-4 overflow-y-auto px-2">
+                    <!-- Horse bet inputs will be generated here --></div>
+                
+                <!-- Footer area --><div class="flex-shrink-0">
+                    <div class="text-xl font-bold mb-3 text-center">
+                        Total Bet: <span id="total-bet-display" class="text-white">0</span>
+                        /
+                        Remaining: <span id="remaining-balance-display" class="text-white">1000</span>
+                    </div>
+                    <!-- Error messages still use red for clarity --><div id="bet-error-message" class="text-red-500 text-center font-semibold mb-4 h-6"></div>
+                    <div class="flex justify-around">
+                        <button id="cancel-bet-button" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-8 rounded-lg transition duration-300">
+                            Cancel
+                        </button>
+                        <button id="confirm-bet-button" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg transition duration-300">
+                            Confirm Bets
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- ===== Countdown Overlay ===== --><div id="countdown-overlay" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+            <div id="countdown-text" class="text-7xl sm:text-9xl font-black text-white" style="text-shadow: 4px 4px #f00;"></div>
+        </div>
+        
+        <!-- ===== Results Modal ===== --><div id="results-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+            <div class="bg-gray-800 p-4 sm:p-8 rounded-lg shadow-2xl w-full max-w-2xl text-white">
+                <h2 class="text-2xl sm:text-4xl font-bold mb-6 text-center text-white">Race Results</h2>
+                <div id="results-summary" class="space-y-3 mb-6 text-lg">
+                    <!-- Results summary will be generated here --></div>
+                <div class="text-center">
+                    <button id="results-close-button" class="bg-gray-200 text-gray-900 hover:bg-gray-300 text-base py-2 px-6 sm:text-xl sm:py-3 sm:px-8 rounded-lg shadow-lg transition duration-300">
+                        OK
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- JavaScript Game Logic --><script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // === DOM Elements ===
+            const titleScreen = document.getElementById('title-screen');
+            const gameScreen = document.getElementById('game-screen');
+            const playButton = document.getElementById('play-button');
+            const mainMenuButton = document.getElementById('main-menu-button');
+
+            const balanceDisplay = document.getElementById('balance-display');
+            const balanceContainer = balanceDisplay.parentElement;
+            const messageCenter = document.getElementById('message-center');
+            const racetrackContainer = document.getElementById('racetrack-container');
+            const finishLine = document.getElementById('finish-line');
+            const racetrackArea = document.getElementById('racetrack-area');
+
+            const betButton = document.getElementById('bet-button');
+            const startButton = document.getElementById('start-button');
+
+            const bettingModal = document.getElementById('betting-modal');
+            const bettingForm = document.getElementById('betting-form');
+            const totalBetDisplay = document.getElementById('total-bet-display');
+            const remainingBalanceDisplay = document.getElementById('remaining-balance-display');
+            const betErrorMessage = document.getElementById('bet-error-message');
+            const cancelBetButton = document.getElementById('cancel-bet-button');
+            const confirmBetButton = document.getElementById('confirm-bet-button');
+            
+            const countdownOverlay = document.getElementById('countdown-overlay');
+            const countdownText = document.getElementById('countdown-text');
+
+            const resultsModal = document.getElementById('results-modal');
+            const resultsSummary = document.getElementById('results-summary');
+            const resultsCloseButton = document.getElementById('results-close-button');
+            // REMOVED Mute button
+
+            // === Game State ===
+            let balance = 1000;
+            let horses = [];
+            
+            // NEW: Updated horse data structure
+            const horseData = [
+                { name: "FAHAD8", emoji: "🏇🏻", plateBg: "#fbcfe8", plateText: "#1f2937", flip: true }, // light pink (grey horse)
+                { name: "AR4715", emoji: "🏇🏽", plateBg: "#b91c1c", plateText: "#ffffff", flip: true }, // crimson (brown horse)
+                { name: "TUNA14", emoji: "🐟", plateBg: "#000000", plateText: "#ffffff", flip: true }, // black (tuna)
+                { name: "WIKI200", emoji: "🏇🏿", plateBg: "#facc15", plateText: "#1f2937", flip: true }, // gold (black horse)
+                { name: "EMA1122", emoji: "🏇🏼", plateBg: "#2563eb", plateText: "#ffffff", flip: true }, // blue (white horse)
+                { name: "KHAN70", emoji: "🏍️", plateBg: "#9ca3af", plateText: "#1f2937", flip: false }  // silver (motorcycle)
+            ];
+            // Preserve the simple names array for functions that just need the names
+            const horseNames = horseData.map(h => h.name);
+            
+            let bets = {}; // { "FAHAD8": 100, "TUNA14": 50 }
+            let raceInterval;
+            let horseElements = [];
+            let finishedHorses = [];
+            let gameInProgress = false;
+            // REMOVED Mute state
+            let soundsReady = false; // NEW: Sound init state
+            let lastTotalBet = 0; // NEW: Store last bet amount
+
+            // === Sound Setup ===
+            let countdownSynth, clickSynth, winSynth, loseSynth; // NEW: Renamed/added synths
+            
+            function setupSounds() {
+                // Synth for countdown SFX
+                countdownSynth = new Tone.Synth().toDestination();
+
+                // NEW: Synth for UI clicks
+                clickSynth = new Tone.Synth({
+                    volume: -15,
+                    oscillator: { type: 'sine' },
+                    envelope: { attack: 0.001, decay: 0.1, sustain: 0, release: 0.1 }
+                }).toDestination();
+
+                // NEW: Synth for win sound
+                winSynth = new Tone.PolySynth(Tone.Synth, {
+                    volume: -8,
+                    envelope: { attack: 0.01, decay: 0.2, sustain: 0.2, release: 0.2 }
+                }).toDestination();
+                
+                // NEW: Synth for lose sound
+                loseSynth = new Tone.Synth({
+                    volume: -5,
+                    oscillator: { type: 'triangle' },
+                    envelope: { attack: 0.01, decay: 0.5, sustain: 0, release: 0.1 }
+                }).toDestination();
+
+                soundsReady = true;
+            }
+
+            // NEW: Sound player functions
+            function playClickSound() {
+                if (soundsReady) {
+                    clickSynth.triggerAttackRelease("C5", "50ms");
+                }
+            }
+            
+            function playWinSound() {
+                if (!soundsReady) return;
+                const now = Tone.now();
+                // Happy C-major arpeggio
+                winSynth.triggerAttackRelease("C4", "8n", now);
+                winSynth.triggerAttackRelease("E4", "8n", now + 0.1);
+                winSynth.triggerAttackRelease("G4", "8n", now + 0.2);
+                winSynth.triggerAttackRelease("C5", "8n", now + 0.3);
+            }
+
+            function playLoseSound() {
+                if (!soundsReady) return;
+                const now = Tone.now();
+                // Sad descending sound
+                loseSynth.triggerAttackRelease("G3", "4n", now);
+                loseSynth.triggerAttackRelease("C3", "2n", now + 0.2);
+            }
+
+
+            // === Initialization ===
+            playButton.addEventListener('click', () => {
+                playClickSound(); // NEW
+                initGame();
+            });
+            betButton.addEventListener('click', () => {
+                playClickSound(); // NEW
+                openBettingModal();
+            });
+            startButton.addEventListener('click', () => {
+                playClickSound(); // NEW
+                startRace();
+            });
+            cancelBetButton.addEventListener('click', () => {
+                playClickSound(); // NEW
+                closeBettingModal();
+            });
+            confirmBetButton.addEventListener('click', () => {
+                playClickSound(); // NEW
+                confirmBets();
+            });
+            resultsCloseButton.addEventListener('click', () => {
+                playClickSound(); // NEW
+                closeResultsModal();
+            });
+            mainMenuButton.addEventListener('click', () => {
+                playClickSound(); // NEW
+                backToMenu();
+            });
+            
+            // REMOVED: Mute button listener
+
+            async function initGame() {
+                titleScreen.classList.add('hidden');
+                gameScreen.classList.remove('hidden');
+                gameScreen.classList.add('flex'); // Make it flex
+                
+                // NEW: Initialize and start audio context on user interaction
+                if (Tone.context.state !== 'running') {
+                    await Tone.start();
+                    setupSounds(); // Setup synths now that context is running
+                    // REMOVED Tone.Transport.start();
+                    // REMOVED musicLoop.start(0);
+                    console.log("Audio context started");
+                }
+                
+                resetGame();
+            }
+            
+            function backToMenu() {
+                // Hide game, show title
+                titleScreen.classList.remove('hidden');
+                gameScreen.classList.add('hidden');
+                gameScreen.classList.remove('flex');
+
+                // Hard reset
+                balance = 1000;
+                bets = {};
+                gameInProgress = false;
+                if (raceInterval) clearInterval(raceInterval);
+                
+                // Reset UI elements
+                updateBalanceDisplay();
+                messageCenter.textContent = '';
+                betButton.disabled = false;
+                betButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                startButton.disabled = true;
+                startButton.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+
+            function setupRacetrack() {
+                racetrackContainer.innerHTML = '';
+                horseElements = [];
+                horses = [];
+                
+                const trackColors = [
+                    'bg-red-600', 'bg-blue-600', 'bg-purple-600', 
+                    'bg-yellow-500', 'bg-pink-500', 'bg-cyan-500'
+                ];
+
+                for (let i = 0; i < horseData.length; i++) {
+                    const horseInfo = horseData[i];
+                    
+                    // Create track
+                    const track = document.createElement('div');
+                    track.className = `relative w-full h-1/6 border-t-4 border-b-4 border-dashed border-white border-opacity-30 ${trackColors[i]} rounded-lg my-1`;
+                    
+                    // Create horse
+                    const horse = document.createElement('div');
+                    horse.className = 'horse absolute top-1/2 -translate-y-1/2';
+                    horse.style.left = '10px'; // Start position
+
+                    // --- NEW: Create custom emoji and nameplate ---
+                    
+                    // 1. Create emoji span
+                    const emojiSpan = document.createElement('span');
+                    emojiSpan.textContent = horseInfo.emoji;
+                    emojiSpan.style.display = 'inline-block'; // Needed for transform
+                    if (horseInfo.flip) {
+                        emojiSpan.style.transform = 'scaleX(-1)';
+                    }
+                    
+                    // 2. Create nameplate span
+                    const nameplate = document.createElement('span');
+                    nameplate.className = 'horse-name';
+                    nameplate.textContent = horseInfo.name;
+                    nameplate.style.backgroundColor = horseInfo.plateBg;
+                    nameplate.style.color = horseInfo.plateText;
+                    nameplate.style.border = '1px solid rgba(0,0,0,0.2)'; // Neutral border
+
+                    // 3. Clear the horse div and append new elements
+                    horse.innerHTML = ''; 
+                    horse.appendChild(emojiSpan);
+                    horse.appendChild(nameplate);
+                    // --- End of new logic ---
+                    
+                    track.appendChild(horse);
+                    racetrackContainer.appendChild(track);
+                    
+                    horseElements.push(horse);
+                    horses.push({
+                        name: horseInfo.name,
+                        element: horse,
+                        position: 0,
+                        speed: 0
+                    });
+                }
+            }
+            
+            function resetGame() {
+                gameInProgress = false;
+                finishedHorses = [];
+                bets = {};
+                if (raceInterval) clearInterval(raceInterval);
+                
+                setupRacetrack();
+                
+                updateBalanceDisplay();
+                messageCenter.textContent = 'Place your bets!';
+                
+                betButton.disabled = false;
+                betButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                startButton.disabled = true;
+                startButton.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+
+            // === Betting ===
+            function openBettingModal() {
+                bettingForm.innerHTML = '';
+                betErrorMessage.textContent = '';
+                let totalBet = 0;
+                
+                horseNames.forEach(name => {
+                    const currentBet = bets[name] || 0;
+                    totalBet += currentBet;
+                    
+                    const betInputDiv = document.createElement('div');
+                    betInputDiv.className = 'grid grid-cols-1 sm:grid-cols-3 items-center gap-2 sm:gap-3'; // Responsive grid
+                    betInputDiv.innerHTML = `
+                        <label class="text-lg font-semibold text-left sm:text-right">${name}:</label>
+                        <input type="number" data-name="${name}" value="${currentBet > 0 ? currentBet : ''}" min="0" max="${balance}" 
+                               class="bet-input w-full p-2 border-2 border-gray-600 rounded-lg text-lg bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                               placeholder="0">
+                        <button class="bet-all-in text-sm bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-3 rounded-lg" data-name="${name}">All In</button>
+                    `;
+                    bettingForm.appendChild(betInputDiv);
+                });
+                
+                updateBettingTotals();
+
+                // Add event listeners for inputs
+                bettingForm.querySelectorAll('.bet-input').forEach(input => {
+                    input.addEventListener('input', updateBettingTotals);
+                });
+
+                // Add event listeners for "All In"
+                bettingForm.querySelectorAll('.bet-all-in').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        playClickSound(); // NEW
+                        const name = e.target.dataset.name;
+                        const input = bettingForm.querySelector(`.bet-input[data-name="${name}"]`);
+                        
+                        // Calculate remaining balance *after* other bets
+                        let otherBets = 0;
+                        bettingForm.querySelectorAll('.bet-input').forEach(inp => {
+                            if (inp.dataset.name !== name) {
+                                otherBets += parseInt(inp.value) || 0;
+                            }
+                        });
+                        
+                        const allInAmount = balance - otherBets;
+                        input.value = allInAmount > 0 ? allInAmount : 0;
+                        updateBettingTotals();
+                    });
+                });
+                
+                bettingModal.classList.remove('hidden');
+            }
+            
+            function updateBettingTotals() {
+                let totalBet = 0;
+                bettingForm.querySelectorAll('.bet-input').forEach(input => {
+                    totalBet += parseInt(input.value) || 0;
+                });
+                
+                const remaining = balance - totalBet;
+                
+                totalBetDisplay.textContent = remaining >= 0 ? totalBet : 0; // Show 0 if over budget
+                remainingBalanceDisplay.textContent = remaining;
+                
+                if (remaining < 0) {
+                    betErrorMessage.textContent = "You cannot bet more than you have!";
+                    confirmBetButton.disabled = true;
+                    confirmBetButton.classList.add('opacity-50', 'cursor-not-allowed');
+                } else {
+                    betErrorMessage.textContent = '';
+                    confirmBetButton.disabled = false;
+                    confirmBetButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            }
+
+            function closeBettingModal() {
+                bettingModal.classList.add('hidden');
+            }
+
+            function confirmBets() {
+                let totalBet = 0;
+                bets = {};
+                lastTotalBet = 0; // NEW: Reset last bet
+                
+                bettingForm.querySelectorAll('.bet-input').forEach(input => {
+                    const amount = parseInt(input.value) || 0;
+                    if (amount > 0) {
+                        const name = input.dataset.name;
+                        bets[name] = amount;
+                        totalBet += amount;
+                    }
+                });
+                
+                lastTotalBet = totalBet; // NEW: Store the total bet
+                
+                if (totalBet > balance) {
+                    betErrorMessage.textContent = "You cannot bet more than you have!";
+                    return;
+                }
+                
+                if (totalBet === 0) {
+                    betErrorMessage.textContent = "You must place at least one bet!";
+                    return;
+                }
+                
+                // Valid bets placed
+                balance -= totalBet;
+                updateBalanceDisplay();
+                messageCenter.textContent = `Total Bet: ${totalBet}. Good luck!`;
+                
+                startButton.disabled = false;
+                startButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                betButton.disabled = true;
+                betButton.classList.add('opacity-50', 'cursor-not-allowed');
+                
+                closeBettingModal();
+            }
+
+            // === Racing ===
+            async function startRace() {
+                gameInProgress = true;
+                startButton.disabled = true;
+                startButton.classList.add('opacity-50', 'cursor-not-allowed');
+                
+                // Countdown
+                await runCountdown();
+                
+                // Assign random speeds
+                horses.forEach(horse => {
+                    horse.speed = Math.random() * 2.5 + 1.5; // Base speed
+                    horse.position = 10; // Reset start position
+                    horse.element.style.left = `${horse.position}px`;
+                });
+                
+                finishedHorses = [];
+                messageCenter.textContent = "And they're off!";
+                
+                raceInterval = setInterval(raceLoop, 100);
+            }
+            
+            async function runCountdown() {
+                countdownOverlay.classList.remove('hidden');
+                countdownOverlay.classList.add('flex');
+                
+                countdownText.textContent = '3';
+                if(soundsReady) countdownSynth.triggerAttackRelease("C4", "8n", Tone.now()); // NEW: Renamed synth
+                await new Promise(r => setTimeout(r, 1000));
+                
+                countdownText.textContent = '2';
+                if(soundsReady) countdownSynth.triggerAttackRelease("C4", "8n", Tone.now()); // NEW: Renamed synth
+                await new Promise(r => setTimeout(r, 1000));
+                
+                countdownText.textContent = '1';
+                if(soundsReady) countdownSynth.triggerAttackRelease("C4", "8n", Tone.now()); // NEW: Renamed synth
+                await new Promise(r => setTimeout(r, 1000));
+                
+                countdownText.textContent = 'START!';
+                if(soundsReady) countdownSynth.triggerAttackRelease("G4", "4n", Tone.now()); // NEW: Renamed synth
+                await new Promise(r => setTimeout(r, 1000));
+                
+                countdownOverlay.classList.add('hidden');
+                countdownOverlay.classList.remove('flex');
+            }
+            
+            function raceLoop() {
+                const finishLinePos = racetrackArea.offsetWidth - finishLine.offsetWidth - 40; // 40px buffer
+
+                let allFinished = true;
+                
+                horses.forEach(horse => {
+                    if (finishedHorses.includes(horse.name)) {
+                        return; // This horse already finished
+                    }
+                    
+                    allFinished = false; // At least one horse is still racing
+
+                    // Move horse
+                    const move = horse.speed + (Math.random() * 2 - 1); // Add "stumble" factor
+                    horse.position += move;
+                    
+                    if (horse.position >= finishLinePos) {
+                        horse.position = finishLinePos;
+                        finishedHorses.push(horse.name);
+                        
+                        // Add rank badge
+                        const rank = finishedHorses.length;
+                        const rankBadge = document.createElement('span');
+                        rankBadge.className = 'horse-rank';
+                        rankBadge.dataset.rank = rank;
+                        rankBadge.textContent = rank;
+                        horse.element.appendChild(rankBadge);
+                    }
+                    
+                    horse.element.style.left = `${horse.position}px`;
+                });
+                
+                if (allFinished) {
+                    endRace();
+                }
+            }
+
+            function endRace() {
+                clearInterval(raceInterval);
+                gameInProgress = false;
+                messageCenter.textContent = "Race finished! Calculating results...";
+                
+                let winnings = 0;
+                const payoutRates = { 1: 2, 2: 1.5, 3: 1.1 };
+                
+                let resultsHTML = '';
+                
+                // Add header for winners
+                resultsHTML += `<div class="border-b-2 border-gray-600 pb-2 mb-3">
+                                <h3 class="text-2xl font-bold">Winners</h3>
+                                <p><strong>1st:</strong> ${finishedHorses[0]} (2x Payout)</p>
+                                <p><strong>2nd:</strong> ${finishedHorses[1]} (1.5x Payout)</p>
+                                <p><strong>3rd:</strong> ${finishedHorses[2]} (1.1x Payout)</p>
+                               </div>`;
+                               
+                // Add header for your bets
+                resultsHTML += `<h3 class="text-2xl font-bold mb-2">Your Bets</h3>`;
+                
+                if (Object.keys(bets).length === 0) {
+                     resultsHTML += `<p class="text-gray-400">You didn't place any bets.</p>`;
+                }
+
+                for (const horseName in bets) {
+                    const betAmount = bets[horseName];
+                    const rank = finishedHorses.indexOf(horseName) + 1;
+                    
+                    let resultText = `You bet $${betAmount} on <strong>${horseName}</strong>. `;
+                    
+                    if (rank > 0 && rank <= 3) {
+                        const payout = Math.floor(betAmount * payoutRates[rank]);
+                        winnings += payout;
+                        resultText += `It finished <strong>${rank}${rank === 1 ? 'st' : rank === 2 ? 'nd' : 'rd'}</strong>! You win $${payout}!`;
+                        resultText = `<div class="p-2 rounded-lg bg-green-900">${resultText}</div>`;
+                    } else {
+                        resultText += `It finished <strong>${rank > 0 ? rank + 'th' : 'last'}</strong>. You lost your bet.`;
+                        resultText = `<div class="p-2 rounded-lg bg-red-900">${resultText}</div>`;
+                    }
+                    resultsHTML += resultText;
+                }
+                
+                // NEW: Play Win/Lose Sound
+                if (winnings > 0) {
+                    playWinSound();
+                } else if (lastTotalBet > 0) { // If totalBet > 0 and winnings is 0
+                    playLoseSound();
+                }
+                
+                resultsHTML += `<hr class="my-4 border-gray-600">`;
+                resultsHTML += `<p class="text-2xl font-bold text-center">Total Winnings: $${winnings}</p>`;
+                
+                // Update balance
+                balance += winnings;
+                updateBalanceDisplay();
+                
+                // FIX: Corrected typo in results modal
+                resultsHTML += `<p class="text-xl font-bold text-center mt-2">New Balance: $${Math.floor(balance)}</p>`;
+                
+                resultsSummary.innerHTML = resultsHTML;
+                resultsModal.classList.remove('hidden');
+            }
+            
+            function closeResultsModal() {
+                resultsModal.classList.add('hidden');
+                resetGame();
+            }
+
+            // === Utility ===
+            function updateBalanceDisplay() {
+                balanceDisplay.textContent = Math.floor(balance);
+                // Add red color if out of money
+                const isBroke = balance <= 0;
+                balanceContainer.classList.toggle('text-red-500', isBroke);
+                balanceContainer.classList.toggle('text-white', !isBroke);
+            }
+        });
+    </script>
+</body>
+</html>
+
+
+
+
