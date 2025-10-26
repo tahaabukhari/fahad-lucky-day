@@ -6,7 +6,7 @@
     <title>Horse Betting Simulator</title>
     <!-- Load Tailwind CSS --><script src="https://cdn.tailwindcss.com"></script>
     <!-- Load Inter font --><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
-    <!-- NEW: Load Tone.js for sound --><script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+    <!-- Load Tone.js for sound --><script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
     <style>
         /* Use Inter as the default font */
         html, body {
@@ -22,69 +22,54 @@
         /* Custom styles for the horse */
         .horse {
             transition: left 0.1s linear;
-            font-size: 1.5rem; /* Mobile emoji size */
+            font-size: 1.5rem; /* Base emoji size */
             line-height: 1;
             z-index: 20; /* Ensure horse is above finish line */
         }
         .horse-name {
             position: absolute;
-            bottom: -16px; /* Mobile nameplate position */
+            bottom: -20px; /* Adjusted nameplate position (raised) */
             left: 50%;
             transform: translateX(-50%);
-            padding: 2px 6px;
+            padding: 3px 8px; /* More padding */
             border-radius: 4px;
-            font-size: 0.65rem; /* Mobile font size */
-            font-weight: 700; 
+            font-size: 0.75rem; /* Smaller font for mobile */
+            font-weight: 700; /* Bolder */
             white-space: nowrap;
         }
         .horse-rank {
             position: absolute;
-            top: -20px; /* Mobile rank position */
+            top: -20px;
             left: 50%;
             transform: translateX(-50%);
             background-color: gold;
             color: black;
             font-weight: bold;
             border-radius: 50%;
-            width: 18px; /* Mobile rank size */
-            height: 18px; /* Mobile rank size */
+            width: 20px;
+            height: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.75rem; /* Mobile rank font */
+            font-size: 0.8rem;
             z-index: 10;
         }
         /* Style for 2nd (silver) and 3rd (bronze) place */
         .horse-rank[data-rank="2"] { background-color: silver; }
         .horse-rank[data-rank="3"] { background-color: #cd7f32; }
+        /* NEW: Style for 4th-6th (white) */
+        .horse-rank[data-rank="4"],
+        .horse-rank[data-rank="5"],
+        .horse-rank[data-rank="6"] { background-color: #f3f4f6; color: #1f2937; }
         
-        /* Responsive adjustments for desktop */
-        @media (min-width: 640px) {
-            .horse {
-                font-size: 1.8rem;
-            }
-            .horse-name {
-                font-size: 0.875rem;
-                bottom: -20px;
-                padding: 3px 8px;
-            }
-            .horse-rank {
-                width: 24px;
-                height: 24px;
-                font-size: 0.9rem;
-                top: -25px;
-            }
-        }
-
         /* Title Screen Animations */
         @keyframes float {
             0% { transform: translateY(0px); }
             50% { transform: translateY(-10px); }
             100% { transform: translateY(0px); }
         }
-        .animate-float {
-            animation: float 6s ease-in-out infinite;
-        }
+        /* .animate-float is still used by old code, but removed from h1 */
+        
         @keyframes pulse-button {
             0% { transform: scale(1); }
             50% { transform: scale(1.05); }
@@ -92,6 +77,51 @@
         }
         .animate-pulse-button {
             animation: pulse-button 2s ease-in-out infinite;
+        }
+        
+        /* NEW: Text Shadow Pulse Animation */
+        .animate-shadow-pulse {
+            animation: shadow-pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes shadow-pulse {
+            0% {
+                text-shadow: 0 0 3px rgba(59, 130, 246, 0.2), 0 0 6px rgba(167, 139, 250, 0.2); /* Dimmer start */
+            }
+            50% {
+                text-shadow: 0 0 6px rgba(59, 130, 246, 0.5), 0 0 12px rgba(167, 139, 250, 0.5); /* Slightly brighter mid-point */
+            }
+            100% {
+                text-shadow: 0 0 3px rgba(59, 130, 246, 0.2), 0 0 6px rgba(167, 139, 250, 0.2); /* Return to dim */
+            }
+        }
+
+        /* NEW: Animation for START! text */
+        @keyframes fast-hue-rotate {
+            0% { filter: hue-rotate(0deg); text-shadow: 4px 4px #ef4444; }
+            25% { filter: hue-rotate(90deg); text-shadow: 4px 4px #eab308; }
+            50% { filter: hue-rotate(180deg); text-shadow: 4px 4px #22c55e; }
+            75% { filter: hue-rotate(270deg); text-shadow: 4px 4px #3b82f6; }
+            100% { filter: hue-rotate(360deg); text-shadow: 4px 4px #ef4444; }
+        }
+        .animate-fast-hue {
+            animation: fast-hue-rotate 0.5s linear infinite;
+        }
+
+        /* Responsive adjustments */
+        @media (min-width: 640px) {
+            .horse {
+                font-size: 1.8rem; /* Larger emoji on desktop */
+            }
+            .horse-name {
+                font-size: 0.875rem; /* Larger font on desktop */
+            }
+            .horse-rank {
+                width: 24px;
+                height: 24px;
+                font-size: 0.9rem;
+                top: -25px;
+            }
         }
     </style>
 </head>
@@ -101,14 +131,20 @@
 
         <!-- ===== Title Screen ===== --><div id="title-screen" class="relative text-center flex-grow flex flex-col justify-center">
             
-            <h1 class="text-4xl sm:text-6xl font-black text-white mb-4 animate-float">Fahad's Lucky Day!</h1>
-            <p class="text-lg sm:text-xl text-gray-300 mb-8 whitespace-pre-line">
-A super simple horse betting simulator made with AI(love)!!
+            <!-- Reworked Title --><h1 class="text-4xl sm:text-7xl font-black mb-4 animate-shadow-pulse bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500 inline-block">Fahad's Lucky Day!</h1>
+            
+            <p class="text-lg sm:text-xl text-gray-400 mb-8 whitespace-pre-line">
+A Super Simple Horse Betting Simulator!!
 Place Your Bets and WIN BIG!!
             </p>
-            <button id="play-button" class="bg-gray-200 text-gray-900 hover:bg-gray-300 text-xl py-3 px-8 sm:text-2xl sm:py-4 sm:px-12 rounded-lg shadow-lg transition duration-300 transform hover:scale-105 self-center animate-pulse-button">
-                PLAY
-            </button>
+            <!-- Button container --><div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <button id="play-button" class="bg-gray-200 text-gray-900 hover:bg-gray-300 text-xl py-3 px-8 sm:text-2xl sm:py-4 sm:px-12 rounded-lg shadow-lg transition duration-300 transform hover:scale-105 self-center animate-pulse-button">
+                    PLAY
+                </button>
+                <!-- Top Up Button --><button id="topup-button" class="bg-gray-700 text-gray-200 hover:bg-gray-600 text-xl py-3 px-8 sm:text-2xl sm:py-4 sm:px-12 rounded-lg shadow-lg transition duration-300 transform hover:scale-105 self-center">
+                    Top Up
+                </button>
+            </div>
         </div>
 
         <!-- ===== Game Screen ===== --><div id="game-screen" class="hidden w-full h-full flex-col">
@@ -116,15 +152,14 @@ Place Your Bets and WIN BIG!!
                 <button id="main-menu-button" class="bg-gray-600 hover:bg-gray-700 text-white text-sm font-bold py-1 px-2 sm:py-2 sm:px-4 rounded-lg shadow-lg transition duration-300">
                     Main Menu
                 </button>
-                
-                <div id="message-center" class="text-base sm:text-lg font-semibold text-white h-6 text-center flex-grow px-2"></div>
+                <!-- Mute Button REMOVED --><div id="message-center" class="text-base sm:text-lg font-semibold text-white h-6 text-center flex-grow px-2"></div>
                 <h2 class="text-xl sm:text-3xl font-bold text-white">
-                    <span class="hidden sm:inline">BALANCE: </span>
+                    BALANCE: 
                     <span id="balance-display">1000</span>
                 </h2>
             </div>
 
-            <!-- Racetrack Area (flex-grow to fill space) --><div id="racetrack-area" class="relative bg-green-900 border-8 border-yellow-700 rounded-lg p-4 w-full flex-grow" style="background-color: #386641;">
+            <!-- Racetrack Area (flex-grow to fill space) --><div id="racetrack-area" class="relative bg-green-900 border-8 border-yellow-700 rounded-lg p-2 sm:p-4 w-full flex-grow" style="background-color: #386641;">
                 <!-- Finish Line --><div id="finish-line" class="absolute top-0 bottom-0 right-4 w-4 bg-repeat-y z-10" style="background-image: repeating-linear-gradient(135deg, white, white 10px, black 10px, black 20px); border-left: 4px solid #a00;">
                 </div>
                 
@@ -132,35 +167,40 @@ Place Your Bets and WIN BIG!!
                     <!-- Tracks will be dynamically generated here --></div>
             </div>
 
-            <!-- Controls --><div class="flex justify-between items-center mt-6 flex-shrink-0">
-                <button id="bet-button" class="bg-gray-200 text-gray-900 hover:bg-gray-300 text-base py-2 px-4 sm:text-xl sm:py-3 sm:px-8 rounded-lg shadow-lg transition duration-300 transform hover:scale-105">
+            <!-- Controls --><div class="flex justify-between items-center mt-4 sm:mt-6 flex-shrink-0">
+                <button id="bet-button" class="bg-gray-200 text-gray-900 hover:bg-gray-300 text-lg py-2 px-6 sm:text-xl sm:py-3 sm:px-8 rounded-lg shadow-lg transition duration-300 transform hover:scale-105">
                     Place Your Bets!
                 </button>
-                <button id="start-button" class="bg-gray-200 text-gray-900 hover:bg-gray-300 text-base py-2 px-4 sm:text-xl sm:py-3 sm:px-8 rounded-lg shadow-lg transition duration-300 transform hover:scale-105 opacity-50 cursor-not-allowed" disabled>
+                
+                <!-- NEW: Current Bet Display --><div id="current-bet-display" class="text-center text-gray-400 text-xs sm:text-base px-2 truncate">
+                    No bets placed
+                </div>
+
+                <button id="start-button" class="bg-gray-200 text-gray-900 hover:bg-gray-300 text-lg py-2 px-6 sm:text-xl sm:py-3 sm:px-8 rounded-lg shadow-lg transition duration-300 transform hover:scale-105 opacity-50 cursor-not-allowed" disabled>
                     Start Race!
                 </button>
             </div>
         </div>
 
         <!-- ===== Betting Modal ===== --><div id="betting-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-            <!-- Modal content with reduced padding and max height --><div class="bg-gray-800 p-4 sm:p-6 rounded-lg shadow-2xl w-full max-w-lg text-white flex flex-col" style="max-height: 90vh;">
-                <h2 class="text-2xl sm:text-3xl font-bold mb-4 text-center text-white flex-shrink-0">Place Your Bets</h2>
+            <!-- Modal content with reduced padding and max height --><div class="bg-gray-800 p-6 rounded-lg shadow-2xl w-full max-w-lg text-white flex flex-col" style="max-height: 90vh;">
+                <h2 class="text-3xl font-bold mb-4 text-center text-white flex-shrink-0">Place Your Bets</h2>
                 
                 <!-- Scrollable form area --><div id="betting-form" class="space-y-3 mb-4 overflow-y-auto px-2">
                     <!-- Horse bet inputs will be generated here --></div>
                 
                 <!-- Footer area --><div class="flex-shrink-0">
-                    <div class="text-xl font-bold mb-3 text-center">
+                    <div class="text-lg sm:text-xl font-bold mb-3 text-center">
                         Total Bet: <span id="total-bet-display" class="text-white">0</span>
                         /
                         Remaining: <span id="remaining-balance-display" class="text-white">1000</span>
                     </div>
                     <!-- Error messages still use red for clarity --><div id="bet-error-message" class="text-red-500 text-center font-semibold mb-4 h-6"></div>
                     <div class="flex justify-around">
-                        <button id="cancel-bet-button" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-8 rounded-lg transition duration-300">
+                        <button id="cancel-bet-button" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 sm:py-3 sm:px-8 rounded-lg transition duration-300">
                             Cancel
                         </button>
-                        <button id="confirm-bet-button" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg transition duration-300">
+                        <button id="confirm-bet-button" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 sm:py-3 sm:px-8 rounded-lg transition duration-300">
                             Confirm Bets
                         </button>
                     </div>
@@ -169,17 +209,44 @@ Place Your Bets and WIN BIG!!
         </div>
         
         <!-- ===== Countdown Overlay ===== --><div id="countdown-overlay" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-            <div id="countdown-text" class="text-7xl sm:text-9xl font-black text-white" style="text-shadow: 4px 4px #f00;"></div>
+            <div id="countdown-text" class="text-8xl sm:text-9xl font-black text-white"></div>
         </div>
         
         <!-- ===== Results Modal ===== --><div id="results-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-            <div class="bg-gray-800 p-4 sm:p-8 rounded-lg shadow-2xl w-full max-w-2xl text-white">
-                <h2 class="text-2xl sm:text-4xl font-bold mb-6 text-center text-white">Race Results</h2>
-                <div id="results-summary" class="space-y-3 mb-6 text-lg">
+            <!-- Compacted Modal --><div class="bg-gray-800 p-6 rounded-lg shadow-2xl w-full max-w-lg text-white">
+                <h2 class="text-3xl font-bold mb-4 text-center text-white">Race Results</h2>
+                <div id="results-summary" class="space-y-2 mb-4 text-base">
                     <!-- Results summary will be generated here --></div>
-                <div class="text-center">
+                <div class="flex justify-center gap-4">
+                    <!-- NEW: Share Button --><button id="share-button" class="bg-green-600 hover:bg-green-700 text-white text-base py-2 px-6 sm:text-xl sm:py-3 sm:px-8 rounded-lg shadow-lg transition duration-300">
+                        Share
+                    </button>
                     <button id="results-close-button" class="bg-gray-200 text-gray-900 hover:bg-gray-300 text-base py-2 px-6 sm:text-xl sm:py-3 sm:px-8 rounded-lg shadow-lg transition duration-300">
                         OK
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== NEW: Top Up Modal ===== --><div id="topup-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+            <div class="bg-gray-800 p-6 rounded-lg shadow-2xl w-full max-w-2xl text-white">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-3xl font-bold text-center text-white">Top Up Balance</h2>
+                    <button id="topup-close-button" class="text-gray-400 hover:text-white text-3xl font-bold">&times;</button>
+                </div>
+                <p class="text-center text-gray-300 mb-6">Select a pack to add to your balance. (This is a free simulation)</p>
+                <div class="flex flex-col sm:flex-row justify-center gap-4">
+                    <!-- Top Up Card 1 --><button id="add-1000" data-amount="1000" class="topup-amount-btn bg-gray-700 hover:bg-gray-600 p-6 rounded-lg text-center flex-grow transition-transform transform hover:scale-105">
+                        <h3 class="text-2xl font-bold text-white">$1,000</h3>
+                        <p class="text-gray-300">Basic Pack</p>
+                    </button>
+                    <!-- Top Up Card 2 --><button id="add-5000" data-amount="5000" class="topup-amount-btn bg-gray-700 hover:bg-gray-600 p-6 rounded-lg text-center flex-grow transition-transform transform hover:scale-105">
+                        <h3 class="text-2xl font-bold text-white">$5,000</h3>
+                        <p class="text-gray-300">Pro Pack</p>
+                    </button>
+                    <!-- Top Up Card 3 --><button id="add-10000" data-amount="10000" class="topup-amount-btn bg-gray-700 hover:bg-gray-600 p-6 rounded-lg text-center flex-grow transition-transform transform hover:scale-105">
+                        <h3 class="text-2xl font-bold text-white">$10,000</h3>
+                        <p class="text-gray-300">Whale Pack</p>
                     </button>
                 </div>
             </div>
@@ -220,13 +287,19 @@ Place Your Bets and WIN BIG!!
             const resultsModal = document.getElementById('results-modal');
             const resultsSummary = document.getElementById('results-summary');
             const resultsCloseButton = document.getElementById('results-close-button');
-            // REMOVED Mute button
+            const shareButton = document.getElementById('share-button'); // NEW
+            const currentBetDisplay = document.getElementById('current-bet-display'); // NEW
+            
+            // Top Up Modal Elements
+            const topupModal = document.getElementById('topup-modal');
+            const topupButton = document.getElementById('topup-button');
+            const topupCloseButton = document.getElementById('topup-close-button');
+            const topupAmountButtons = document.querySelectorAll('.topup-amount-btn');
 
             // === Game State ===
             let balance = 1000;
             let horses = [];
             
-            // NEW: Updated horse data structure
             const horseData = [
                 { name: "FAHAD8", emoji: "🏇🏻", plateBg: "#fbcfe8", plateText: "#1f2937", flip: true }, // light pink (grey horse)
                 { name: "AR4715", emoji: "🏇🏽", plateBg: "#b91c1c", plateText: "#ffffff", flip: true }, // crimson (brown horse)
@@ -235,7 +308,6 @@ Place Your Bets and WIN BIG!!
                 { name: "EMA1122", emoji: "🏇🏼", plateBg: "#2563eb", plateText: "#ffffff", flip: true }, // blue (white horse)
                 { name: "KHAN70", emoji: "🏍️", plateBg: "#9ca3af", plateText: "#1f2937", flip: false }  // silver (motorcycle)
             ];
-            // Preserve the simple names array for functions that just need the names
             const horseNames = horseData.map(h => h.name);
             
             let bets = {}; // { "FAHAD8": 100, "TUNA14": 50 }
@@ -243,31 +315,32 @@ Place Your Bets and WIN BIG!!
             let horseElements = [];
             let finishedHorses = [];
             let gameInProgress = false;
-            // REMOVED Mute state
-            let soundsReady = false; // NEW: Sound init state
-            let lastTotalBet = 0; // NEW: Store last bet amount
+            let soundsReady = false; // Sound init state
+            let lastTotalBet = 0; // Store last bet amount
+            let lastWinnings = 0; // NEW: Store last winnings for sharing
+            let lastPlayerRank = -1; // NEW: Store best rank for sharing
 
             // === Sound Setup ===
-            let countdownSynth, clickSynth, winSynth, loseSynth; // NEW: Renamed/added synths
+            let countdownSynth, clickSynth, winSynth, loseSynth; 
             
             function setupSounds() {
                 // Synth for countdown SFX
                 countdownSynth = new Tone.Synth().toDestination();
 
-                // NEW: Synth for UI clicks
+                // Synth for UI clicks
                 clickSynth = new Tone.Synth({
                     volume: -15,
                     oscillator: { type: 'sine' },
                     envelope: { attack: 0.001, decay: 0.1, sustain: 0, release: 0.1 }
                 }).toDestination();
 
-                // NEW: Synth for win sound
+                // Synth for win sound
                 winSynth = new Tone.PolySynth(Tone.Synth, {
                     volume: -8,
                     envelope: { attack: 0.01, decay: 0.2, sustain: 0.2, release: 0.2 }
                 }).toDestination();
                 
-                // NEW: Synth for lose sound
+                // Synth for lose sound
                 loseSynth = new Tone.Synth({
                     volume: -5,
                     oscillator: { type: 'triangle' },
@@ -277,7 +350,7 @@ Place Your Bets and WIN BIG!!
                 soundsReady = true;
             }
 
-            // NEW: Sound player functions
+            // Sound player functions
             function playClickSound() {
                 if (soundsReady) {
                     clickSynth.triggerAttackRelease("C5", "50ms");
@@ -302,53 +375,70 @@ Place Your Bets and WIN BIG!!
                 loseSynth.triggerAttackRelease("C3", "2n", now + 0.2);
             }
 
-
             // === Initialization ===
-            playButton.addEventListener('click', () => {
-                playClickSound(); // NEW
+            playButton.addEventListener('click', async () => {
+                playClickSound(); 
+                // Initialize and start audio context on user interaction
+                if (Tone.context.state !== 'running') {
+                    await Tone.start();
+                    setupSounds(); 
+                    console.log("Audio context started");
+                }
                 initGame();
             });
             betButton.addEventListener('click', () => {
-                playClickSound(); // NEW
+                playClickSound(); 
                 openBettingModal();
             });
             startButton.addEventListener('click', () => {
-                playClickSound(); // NEW
+                playClickSound(); 
                 startRace();
             });
             cancelBetButton.addEventListener('click', () => {
-                playClickSound(); // NEW
+                playClickSound(); 
                 closeBettingModal();
             });
             confirmBetButton.addEventListener('click', () => {
-                playClickSound(); // NEW
+                playClickSound(); 
                 confirmBets();
             });
             resultsCloseButton.addEventListener('click', () => {
-                playClickSound(); // NEW
+                playClickSound(); 
                 closeResultsModal();
             });
             mainMenuButton.addEventListener('click', () => {
-                playClickSound(); // NEW
+                playClickSound(); 
                 backToMenu();
             });
             
-            // REMOVED: Mute button listener
+            // Top Up Modal Listeners
+            topupButton.addEventListener('click', () => {
+                playClickSound();
+                topupModal.classList.remove('hidden');
+            });
 
-            async function initGame() {
+            topupCloseButton.addEventListener('click', () => {
+                playClickSound();
+                topupModal.classList.add('hidden');
+            });
+
+            topupAmountButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const amount = parseInt(button.dataset.amount);
+                    addBalance(amount);
+                });
+            });
+
+            // NEW: Share button listener
+            shareButton.addEventListener('click', () => {
+                playClickSound();
+                shareResults();
+            });
+
+            function initGame() {
                 titleScreen.classList.add('hidden');
                 gameScreen.classList.remove('hidden');
                 gameScreen.classList.add('flex'); // Make it flex
-                
-                // NEW: Initialize and start audio context on user interaction
-                if (Tone.context.state !== 'running') {
-                    await Tone.start();
-                    setupSounds(); // Setup synths now that context is running
-                    // REMOVED Tone.Transport.start();
-                    // REMOVED musicLoop.start(0);
-                    console.log("Audio context started");
-                }
-                
                 resetGame();
             }
             
@@ -359,8 +449,8 @@ Place Your Bets and WIN BIG!!
                 gameScreen.classList.remove('flex');
 
                 // Hard reset
-                balance = 1000;
-                bets = {};
+                // balance = 1000; // REMOVED - This makes balance persistent
+                // bets = {}; // REMOVED - This makes bets persistent
                 gameInProgress = false;
                 if (raceInterval) clearInterval(raceInterval);
                 
@@ -369,8 +459,17 @@ Place Your Bets and WIN BIG!!
                 messageCenter.textContent = '';
                 betButton.disabled = false;
                 betButton.classList.remove('opacity-50', 'cursor-not-allowed');
-                startButton.disabled = true;
-                startButton.classList.add('opacity-50', 'cursor-not-allowed');
+                // NEW: Update bet display
+                updateCurrentBetDisplay();
+                
+                // NEW: Logic for start button based on persistent bets
+                if (Object.keys(bets).length === 0) {
+                    startButton.disabled = true;
+                    startButton.classList.add('opacity-50', 'cursor-not-allowed');
+                } else {
+                    startButton.disabled = false;
+                    startButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
             }
 
             function setupRacetrack() {
@@ -395,7 +494,7 @@ Place Your Bets and WIN BIG!!
                     horse.className = 'horse absolute top-1/2 -translate-y-1/2';
                     horse.style.left = '10px'; // Start position
 
-                    // --- NEW: Create custom emoji and nameplate ---
+                    // --- Create custom emoji and nameplate ---
                     
                     // 1. Create emoji span
                     const emojiSpan = document.createElement('span');
@@ -435,24 +534,49 @@ Place Your Bets and WIN BIG!!
             function resetGame() {
                 gameInProgress = false;
                 finishedHorses = [];
-                bets = {};
+                // bets = {}; // REMOVED - Bets should persist until new ones are made
+                lastTotalBet = 0;
+                lastWinnings = 0;
+                lastPlayerRank = -1;
                 if (raceInterval) clearInterval(raceInterval);
                 
                 setupRacetrack();
                 
                 updateBalanceDisplay();
-                messageCenter.textContent = 'Place your bets!';
+                updateCurrentBetDisplay(); // NEW: Call this
+                // messageCenter.textContent = 'Place your bets!'; // This is handled by updateCurrentBetDisplay
                 
+                // Enable buttons
                 betButton.disabled = false;
                 betButton.classList.remove('opacity-50', 'cursor-not-allowed');
-                startButton.disabled = true;
-                startButton.classList.add('opacity-50', 'cursor-not-allowed');
+                mainMenuButton.disabled = false;
+                mainMenuButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                
+                // Disable start button only if no bets are placed
+                if (Object.keys(bets).length === 0) {
+                    startButton.disabled = true;
+                    startButton.classList.add('opacity-50', 'cursor-not-allowed');
+                } else {
+                    // Bets are still valid from last round
+                    startButton.disabled = false;
+                    startButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                    // messageCenter.textContent = `Current Bet: ${Object.values(bets).reduce((a, b) => a + b, 0)}. Ready!`; // Handled by updateCurrentBetDisplay
+                }
             }
 
             // === Betting ===
             function openBettingModal() {
                 bettingForm.innerHTML = '';
                 betErrorMessage.textContent = '';
+                
+                // NEW: If bets are already placed, refund balance to allow editing
+                if (Object.keys(bets).length > 0 && !gameInProgress) {
+                    const refundedAmount = Object.values(bets).reduce((a, b) => a + b, 0);
+                    balance += refundedAmount;
+                    updateBalanceDisplay();
+                    messageCenter.textContent = 'Edit your bets!';
+                }
+                
                 let totalBet = 0;
                 
                 horseNames.forEach(name => {
@@ -460,9 +584,9 @@ Place Your Bets and WIN BIG!!
                     totalBet += currentBet;
                     
                     const betInputDiv = document.createElement('div');
-                    betInputDiv.className = 'grid grid-cols-1 sm:grid-cols-3 items-center gap-2 sm:gap-3'; // Responsive grid
+                    betInputDiv.className = 'grid grid-cols-3 items-center gap-3'; // Reduced gap
                     betInputDiv.innerHTML = `
-                        <label class="text-lg font-semibold text-left sm:text-right">${name}:</label>
+                        <label class="text-sm sm:text-lg font-semibold text-right">${name}:</label>
                         <input type="number" data-name="${name}" value="${currentBet > 0 ? currentBet : ''}" min="0" max="${balance}" 
                                class="bet-input w-full p-2 border-2 border-gray-600 rounded-lg text-lg bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" 
                                placeholder="0">
@@ -481,7 +605,7 @@ Place Your Bets and WIN BIG!!
                 // Add event listeners for "All In"
                 bettingForm.querySelectorAll('.bet-all-in').forEach(button => {
                     button.addEventListener('click', (e) => {
-                        playClickSound(); // NEW
+                        playClickSound(); 
                         const name = e.target.dataset.name;
                         const input = bettingForm.querySelector(`.bet-input[data-name="${name}"]`);
                         
@@ -510,7 +634,7 @@ Place Your Bets and WIN BIG!!
                 
                 const remaining = balance - totalBet;
                 
-                totalBetDisplay.textContent = remaining >= 0 ? totalBet : 0; // Show 0 if over budget
+                totalBetDisplay.textContent = remaining >= 0 ? totalBet : 0;
                 remainingBalanceDisplay.textContent = remaining;
                 
                 if (remaining < 0) {
@@ -525,13 +649,25 @@ Place Your Bets and WIN BIG!!
             }
 
             function closeBettingModal() {
+                // NEW: If bets were being edited but cancelled, re-deduct the original bet
+                if (Object.keys(bets).length > 0) {
+                    const originalBet = Object.values(bets).reduce((a, b) => a + b, 0);
+                    if (balance >= originalBet) {
+                        balance -= originalBet; // Re-deduct the bet that was refunded on modal open
+                    } else {
+                        bets = {};
+                    }
+                    updateBalanceDisplay();
+                }
+                updateCurrentBetDisplay(); // NEW: Update display
+                
                 bettingModal.classList.add('hidden');
             }
 
             function confirmBets() {
                 let totalBet = 0;
                 bets = {};
-                lastTotalBet = 0; // NEW: Reset last bet
+                lastTotalBet = 0; 
                 
                 bettingForm.querySelectorAll('.bet-input').forEach(input => {
                     const amount = parseInt(input.value) || 0;
@@ -542,7 +678,7 @@ Place Your Bets and WIN BIG!!
                     }
                 });
                 
-                lastTotalBet = totalBet; // NEW: Store the total bet
+                lastTotalBet = totalBet; 
                 
                 if (totalBet > balance) {
                     betErrorMessage.textContent = "You cannot bet more than you have!";
@@ -561,17 +697,22 @@ Place Your Bets and WIN BIG!!
                 
                 startButton.disabled = false;
                 startButton.classList.remove('opacity-50', 'cursor-not-allowed');
-                betButton.disabled = true;
-                betButton.classList.add('opacity-50', 'cursor-not-allowed');
                 
-                closeBettingModal();
+                // closeBettingModal(); // DO NOT CALL THIS - It causes a double-deduct bug
+                bettingModal.classList.add('hidden'); // Manually hide the modal
+                updateCurrentBetDisplay(); // NEW: Update display
             }
 
             // === Racing ===
             async function startRace() {
                 gameInProgress = true;
+                // NEW: Disable all UI during race
                 startButton.disabled = true;
                 startButton.classList.add('opacity-50', 'cursor-not-allowed');
+                betButton.disabled = true;
+                betButton.classList.add('opacity-50', 'cursor-not-allowed');
+                mainMenuButton.disabled = true;
+                mainMenuButton.classList.add('opacity-50', 'cursor-not-allowed');
                 
                 // Countdown
                 await runCountdown();
@@ -593,20 +734,26 @@ Place Your Bets and WIN BIG!!
                 countdownOverlay.classList.remove('hidden');
                 countdownOverlay.classList.add('flex');
                 
+                // NEW: Reset styles and apply colors
+                countdownText.classList.remove('animate-fast-hue');
+                countdownText.style.textShadow = '4px 4px #ef4444'; // Red
                 countdownText.textContent = '3';
-                if(soundsReady) countdownSynth.triggerAttackRelease("C4", "8n", Tone.now()); // NEW: Renamed synth
+                if(soundsReady) countdownSynth.triggerAttackRelease("C4", "8n", Tone.now()); 
                 await new Promise(r => setTimeout(r, 1000));
                 
+                countdownText.style.textShadow = '4px 4px #eab308'; // Yellow
                 countdownText.textContent = '2';
-                if(soundsReady) countdownSynth.triggerAttackRelease("C4", "8n", Tone.now()); // NEW: Renamed synth
+                if(soundsReady) countdownSynth.triggerAttackRelease("C4", "8n", Tone.now()); 
                 await new Promise(r => setTimeout(r, 1000));
                 
+                countdownText.style.textShadow = '4px 4px #22c55e'; // Green
                 countdownText.textContent = '1';
-                if(soundsReady) countdownSynth.triggerAttackRelease("C4", "8n", Tone.now()); // NEW: Renamed synth
+                if(soundsReady) countdownSynth.triggerAttackRelease("C4", "8n", Tone.now()); 
                 await new Promise(r => setTimeout(r, 1000));
                 
+                countdownText.classList.add('animate-fast-hue'); // Animate
                 countdownText.textContent = 'START!';
-                if(soundsReady) countdownSynth.triggerAttackRelease("G4", "4n", Tone.now()); // NEW: Renamed synth
+                if(soundsReady) countdownSynth.triggerAttackRelease("G4", "4n", Tone.now()); 
                 await new Promise(r => setTimeout(r, 1000));
                 
                 countdownOverlay.classList.add('hidden');
@@ -655,68 +802,101 @@ Place Your Bets and WIN BIG!!
                 gameInProgress = false;
                 messageCenter.textContent = "Race finished! Calculating results...";
                 
-                let winnings = 0;
-                const payoutRates = { 1: 2, 2: 1.5, 3: 1.1 };
+                lastWinnings = 0; // Reset for this race
+                lastPlayerRank = 10; // Reset to "loser" rank
+                const payoutRates = { 1: 10, 2: 2, 3: 1.5, 4: 1.1 }; // NEW payouts
                 
                 let resultsHTML = '';
                 
                 // Add header for winners
-                resultsHTML += `<div class="border-b-2 border-gray-600 pb-2 mb-3">
-                                <h3 class="text-2xl font-bold">Winners</h3>
-                                <p><strong>1st:</strong> ${finishedHorses[0]} (2x Payout)</p>
-                                <p><strong>2nd:</strong> ${finishedHorses[1]} (1.5x Payout)</p>
-                                <p><strong>3rd:</strong> ${finishedHorses[2]} (1.1x Payout)</p>
+                resultsHTML += `<div class="border-b-2 border-gray-600 pb-2 mb-2">
+                                <h3 class="text-xl font-bold">Winners</h3>
+                                <p><strong>1st:</strong> ${finishedHorses[0]} (${payoutRates[1]}x)</p>
+                                <p><strong>2nd:</strong> ${finishedHorses[1]} (${payoutRates[2]}x)</p>
+                                <p><strong>3rd:</strong> ${finishedHorses[2]} (${payoutRates[3]}x)</p>
+                                <p><strong>4th:</strong> ${finishedHorses[3]} (${payoutRates[4]}x)</p>
                                </div>`;
                                
                 // Add header for your bets
-                resultsHTML += `<h3 class="text-2xl font-bold mb-2">Your Bets</h3>`;
+                resultsHTML += `<h3 class="text-xl font-bold mb-2">Your Bets</h3>`;
                 
                 if (Object.keys(bets).length === 0) {
                      resultsHTML += `<p class="text-gray-400">You didn't place any bets.</p>`;
+                     lastPlayerRank = -1; // No bets placed
                 }
 
                 for (const horseName in bets) {
                     const betAmount = bets[horseName];
                     const rank = finishedHorses.indexOf(horseName) + 1;
                     
+                    // NEW: Update best player rank
+                    if (rank > 0 && rank < lastPlayerRank) {
+                        lastPlayerRank = rank;
+                    }
+                    
                     let resultText = `You bet $${betAmount} on <strong>${horseName}</strong>. `;
                     
-                    if (rank > 0 && rank <= 3) {
+                    if (rank > 0 && rank <= 4) { // NEW: Check up to 4th
                         const payout = Math.floor(betAmount * payoutRates[rank]);
-                        winnings += payout;
-                        resultText += `It finished <strong>${rank}${rank === 1 ? 'st' : rank === 2 ? 'nd' : 'rd'}</strong>! You win $${payout}!`;
+                        lastWinnings += payout;
+                        const rankSuffix = rank === 1 ? 'st' : rank === 2 ? 'nd' : rank === 3 ? 'rd' : 'th';
+                        resultText += `It finished <strong>${rank}${rankSuffix}</strong>! You win $${payout}!`;
                         resultText = `<div class="p-2 rounded-lg bg-green-900">${resultText}</div>`;
                     } else {
-                        resultText += `It finished <strong>${rank > 0 ? rank + 'th' : 'last'}</strong>. You lost your bet.`;
+                        const rankSuffix = rank > 0 ? 'th' : '';
+                        resultText += `It finished <strong>${rank > 0 ? rank : 'last'}${rankSuffix}</strong>. You lost your bet.`;
                         resultText = `<div class="p-2 rounded-lg bg-red-900">${resultText}</div>`;
                     }
                     resultsHTML += resultText;
                 }
                 
-                // NEW: Play Win/Lose Sound
-                if (winnings > 0) {
+                // Play Win/Lose Sound
+                if (lastWinnings > 0) {
                     playWinSound();
                 } else if (lastTotalBet > 0) { // If totalBet > 0 and winnings is 0
                     playLoseSound();
                 }
                 
-                resultsHTML += `<hr class="my-4 border-gray-600">`;
-                resultsHTML += `<p class="text-2xl font-bold text-center">Total Winnings: $${winnings}</p>`;
+                resultsHTML += `<hr class="my-3 border-gray-600">`;
+                resultsHTML += `<p class="text-xl font-bold text-center">Total Winnings: $${lastWinnings}</p>`;
                 
                 // Update balance
-                balance += winnings;
+                balance += lastWinnings;
                 updateBalanceDisplay();
                 
-                // FIX: Corrected typo in results modal
-                resultsHTML += `<p class="text-xl font-bold text-center mt-2">New Balance: $${Math.floor(balance)}</p>`;
+                resultsHTML += `<p class="text-lg font-bold text-center mt-1">New Balance: $${Math.floor(balance)}</p>`;
                 
                 resultsSummary.innerHTML = resultsHTML;
                 resultsModal.classList.remove('hidden');
+
+                // Clear bets for the next round
+                bets = {}; 
+                updateCurrentBetDisplay(); // NEW: Clear bet display
             }
             
             function closeResultsModal() {
                 resultsModal.classList.add('hidden');
                 resetGame();
+            }
+
+            // NEW: Share function
+            function shareResults() {
+                const gameLink = "https://tahaabukhari.github.io/fahad-lucky-day/"; // UPDATED link
+                let message = "";
+
+                if (lastPlayerRank === 1) {
+                    message = `I'm WINNING BIG on Fahad's Lucky Day! 🤑 Try today and test your luck!\n\n${gameLink}`;
+                } else if (lastPlayerRank > 1 && lastPlayerRank <= 4) {
+                    message = `I'm really enjoying this: Fahad's Lucky Day! 😄 Try it now and test your luck!\n\n${gameLink}`;
+                } else if (lastPlayerRank > 4) {
+                    message = `I'm enjoying but keep losing! 😭 Why don't you try to see if you can win?\n\n${gameLink}`;
+                } else {
+                    // Default message if no bets were placed
+                    message = `This horse racing game is super fun! 🐎 Try it now and test your luck!\n\n${gameLink}`;
+                }
+                
+                const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
+                window.open(whatsappUrl, '_blank');
             }
 
             // === Utility ===
@@ -727,11 +907,49 @@ Place Your Bets and WIN BIG!!
                 balanceContainer.classList.toggle('text-red-500', isBroke);
                 balanceContainer.classList.toggle('text-white', !isBroke);
             }
+
+            // NEW: Function to update the current bet display
+            function updateCurrentBetDisplay() {
+                const betCount = Object.keys(bets).length;
+                
+                if (betCount === 0) {
+                    currentBetDisplay.textContent = 'No bets placed';
+                    messageCenter.textContent = 'Place your bets!';
+                    return;
+                }
+
+                let totalBet = 0;
+                let firstBetName = "";
+                let firstBetAmount = 0;
+
+                let i = 0;
+                for (const horseName in bets) {
+                    if (i === 0) {
+                        firstBetName = horseName;
+                        firstBetAmount = bets[horseName];
+                    }
+                    totalBet += bets[horseName];
+                    i++;
+                }
+                
+                let summaryText = `$${firstBetAmount} on ${firstBetName}`;
+                if (betCount > 1) {
+                    summaryText += ` & ${betCount - 1} more...`;
+                }
+                
+                currentBetDisplay.textContent = `Current Bet: ${summaryText}`;
+                messageCenter.textContent = `Total Bet: ${totalBet}. Ready!`;
+            }
+
+            // Add Balance function
+            function addBalance(amount) {
+                if (soundsReady) playWinSound(); // Play positive sound
+                balance += amount;
+                updateBalanceDisplay();
+                topupModal.classList.add('hidden');
+            }
         });
     </script>
 </body>
 </html>
-
-
-
 
